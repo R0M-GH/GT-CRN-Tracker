@@ -33,16 +33,6 @@ def send_global_message(message):
     except sqlite3.Error as e:
         print(f"Error while sending message to all users: {e}")
 
-def send_user_message(chat_id, msg, parse_mode=None):
-    try: requests.post(BOT_SEND_URL, json={'chat_id': chat_id, 'text': msg, 'parse_mode': parse_mode})
+def send_user_message(chat_id, msg):
+    try: requests.post(BOT_SEND_URL, json={'chat_id': chat_id, 'text': msg})
     except requests.exceptions.RequestException as e: print(f'\nError sending message to {chat_id}: {e}')
-
-try:
-    connection = sqlite3.connect(DB_NAME)
-    c = connection.cursor()
-    c.execute('''DROP TABLE IF EXISTS user_prefs''')
-    connection.commit()
-    connection.close()
-    print("Successfully dropped user_prefs table.")
-except sqlite3.Error as e:
-    print(f'\nError while creating DB: {e}')
