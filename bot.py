@@ -11,9 +11,10 @@ from datetime import datetime, timedelta
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+ENDPOINT = os.getenv('ENDPOINT')
+REG_LINK = os.getenv('REG_LINK')
+TERM = os.getenv('TERM')
 DB_NAME = 'data.db'
-ENDPOINT = 'https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in=%s&crn_in=%s'
-REG_LINK = 'https://registration.banner.gatech.edu/StudentRegistrationSsb/ssb/registration/registration'
 BOT_SEND_URL = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
 COMMANDS = [
     {'command': 'help', 'description': 'Show all commands\' descriptions'},
@@ -21,7 +22,6 @@ COMMANDS = [
     {'command': 'add', 'description': 'Add CRN(s) to the tracker. (e.g., /add 12345, 67890)'},
     {'command': 'rem', 'description': 'Remove CRN(s) from the tracker. (e.g., /rem 12345, 67890)'}
 ]
-term = '202502'
 CRN_STATE = {}
 
 try:
@@ -59,7 +59,7 @@ def update_user_data(chat_id, crns):
 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands', json={'commands': COMMANDS})
 
 async def fetch_course_data(session, term, crn):
-    url = ENDPOINT % (term, crn)
+    url = ENDPOINT % (TERM, crn)
     try:
         async with session.get(url) as response:
             text = await response.text()
@@ -84,13 +84,13 @@ async def course_check():
         connection.close()
 
         for chat_id in user_ids:
-            await generate_course_info_and_notifs(chat_id, term)
+            await generate_course_info_and_notifs(chat_id, TERM)
         await asyncio.sleep(2)
 
 async def generate_course_info_and_notifs(chat_id, term):
     async with ClientSession() as session:
         crns = get_user_data(chat_id)
-        tasks = [fetch_course_data(session, term, crn) for crn in crns]
+        tasks = [fetch_course_data(session, TERM, crn) for crn in crns]
         results = await asyncio.gather(*tasks)
         for crn, name, data in results:
             if not name or not data: continue
@@ -155,7 +155,7 @@ async def telegram_handler():
                                     send_user_message(chat_id, 'No CRNs are being tracked.')
                                 else:
                                     async with ClientSession() as session:
-                                        results = await asyncio.gather(*[fetch_course_data(session, term, crn) for crn in crns])
+                                        results = await asyncio.gather(*[fetch_course_data(session, TERM, crn) for crn in crns])
 
                                         course_list = []
                                         for crn, name, data in results:
@@ -206,7 +206,7 @@ async def telegram_handler():
                             if callback_data.startswith('course_'):
                                 crn = callback_data.split('_')[1]
                                 course_details = None
-                                async with ClientSession() as session: course_details = await fetch_course_data(session, term, crn)
+                                async with ClientSession() as session: course_details = await fetch_course_data(session, TERM, crn)
                                   
                                 if course_details[1]:
                                     message = f'Course: {course_details[1][2]} ({course_details[1][3]}) - {course_details[1][0]}\n' \
@@ -226,7 +226,7 @@ async def telegram_handler():
 
                             elif callback_data == 'back_to_list':
                                 async with ClientSession() as session:
-                                    results = await asyncio.gather(*[fetch_course_data(session, term, crn) for crn in crns])
+                                    results = await asyncio.gather(*[fetch_course_data(session, TERM, crn) for crn in crns])
 
                                     course_list = []
                                     for crn, name, data in results:
