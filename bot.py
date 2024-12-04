@@ -1,17 +1,15 @@
 import os
 import requests
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from typing import Literal
 import asyncio
 from aiohttp import ClientSession
 import sqlite3
-import threading
-from datetime import datetime, timedelta
+from datetime import datetime
+from data import fetch_course_data
 
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-ENDPOINT = os.getenv('ENDPOINT')
 REG_LINK = os.getenv('REG_LINK')
 TERM = os.getenv('TERM')
 DB_NAME = 'data.db'
@@ -57,23 +55,6 @@ def update_user_data(chat_id, crns):
     except sqlite3.Error as e: print(f'\nError while updating user data: {e}')
 
 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMyCommands', json={'commands': COMMANDS})
-
-async def fetch_course_data(session, term, crn):
-    url = ENDPOINT % (TERM, crn)
-    try:
-        async with session.get(url) as response:
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            try:
-                name = soup.find('th', {'class': 'ddlabel'}).get_text(strip=True).split(' - ')
-                table = soup.find('table', {'summary': 'This layout table is used to present the seating numbers.'})
-                data = [cell.get_text(strip=True) for cell in table.find_all('td', {'class': 'dddefault'})]
-                return crn, name, data
-            except AttributeError:
-                return crn, None, None
-    except Exception as e:
-        print(f'\nError fetching course data for CRN {crn}: {e}')
-        return crn, None, None
 
 async def course_check():
     while True:

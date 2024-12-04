@@ -36,3 +36,5 @@ def send_global_message(message):
 def send_user_message(chat_id, msg):
     try: requests.post(BOT_SEND_URL, json={'chat_id': chat_id, 'text': msg})
     except requests.exceptions.RequestException as e: print(f'\nError sending message to {chat_id}: {e}')
+
+send_global_message("Scheduled downtime 11.28.24 18:20:49 PST\n\nI have to go eat dinner")

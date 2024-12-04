@@ -1,5 +1,6 @@
 *.env
 *.db
+data.py
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Diff template
